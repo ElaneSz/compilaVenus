@@ -10,7 +10,6 @@ tokens :-
 
 \r\n      { \s -> NEWLINE }
 \n        { \s -> NEWLINE }
-\r        { \s -> NEWLINE }
 
 \,        { \s -> SEP }
 
