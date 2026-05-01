@@ -1,0 +1,20 @@
+[
+  {
+    "Nome": "Cristiano Vasconcellos",
+    "Endereco": "Rua Angelo Sampaio, 1000",
+    "Cidade": "Curitiba",
+    "Cadastro Ativo": "true"
+  },
+  {
+    "Nome": "Gabriela Moreira",
+    "Endereco": "Rua Paulo Malschitzki, 200",
+    "Cidade": "Joinvile",
+    "Cadastro Ativo": "true"
+  },
+  {
+    "Nome": "Paulo Torrens",
+    "Endereco": "Av. do Contorno, 12",
+    "Cidade": "Belo Horizonte",
+    "Cadastro Ativo": "false"
+  }
+]
