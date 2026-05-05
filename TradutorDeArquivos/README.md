@@ -61,7 +61,7 @@ TradutorDeArquivos/
 ## Descrição dos Arquivos
 
 ### `TokenCSV.hs`
-Define os três tokens reconhecidos pelo analisador léxico, conforme especificado pelo enunciado:
+Define os três tokens reconhecidos pelo analisador léxico:
 
 ```haskell
 data Token
