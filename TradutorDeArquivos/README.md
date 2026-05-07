@@ -166,12 +166,12 @@ make clean
 ## Como Usar
 
 ```bash
-./TradutorDeArquivos <entrada.csv> <saida.json>
+./TradutorDeArquivos < <entrada.csv>
 ```
 
 **Exemplo:**
 ```bash
-./TradutorDeArquivos teste.csv saida.json
+./TradutorDeArquivos < teste.csv
 ```
 
 O programa imprime o JSON no terminal e salva o resultado no arquivo de saída informado.

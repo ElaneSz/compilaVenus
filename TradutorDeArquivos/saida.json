@@ -1,20 +1,32 @@
 [
   {
-    "Nome": "Cristiano Vasconcellos",
-    "Endereco": "Rua Angelo Sampaio, 1000",
-    "Cidade": "Curitiba",
-    "Cadastro Ativo": "true"
+    "Produto": "Notebook Dell",
+    "Preco": "R$ 3.500,00",
+    "Categoria": "Informatica",
+    "Disponivel": "true"
   },
   {
-    "Nome": "Gabriela Moreira",
-    "Endereco": "Rua Paulo Malschitzki, 200",
-    "Cidade": "Joinvile",
-    "Cadastro Ativo": "true"
+    "Produto": "Mouse Logitech",
+    "Preco": "R$ 150,00",
+    "Categoria": "Informatica",
+    "Disponivel": "true"
   },
   {
-    "Nome": "Paulo Torrens",
-    "Endereco": "Av. do Contorno, 12",
-    "Cidade": "Belo Horizonte",
-    "Cadastro Ativo": "false"
+    "Produto": "Cadeira Gamer",
+    "Preco": "R$ 1.200,00",
+    "Categoria": "Moveis, Escritorio",
+    "Disponivel": "true"
+  },
+  {
+    "Produto": "Monitor LG",
+    "Preco": "R$ 2.800,00",
+    "Categoria": "Informatica",
+    "Disponivel": "false"
+  },
+  {
+    "Produto": "Teclado Mecanico",
+    "Preco": "R$ 450,00",
+    "Categoria": "Informatica",
+    "Disponivel": "true"
   }
 ]

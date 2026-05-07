@@ -4,7 +4,6 @@ module Main where
 import TokenCSV
 import JSON
 import AST
-import System.Environment (getArgs) -- Para criar um .json
 import qualified LexCSV as L
 }
 
@@ -35,18 +34,12 @@ parseError ts = error ("Erro sintatico nos tokens: " ++ show ts)
 
 main :: IO ()
 main = do
-  args <- getArgs
-  case args of
-    [inputFile, outputFile] -> do
-      contents <- readFile inputFile
-      let tokens  = L.alexScanTokens contents
-      let tokens' = filterTokens tokens
-      let pair    = parseCSV tokens'
-      let csv     = toCSV pair
-      let result  = toJSON csv
-      putStrLn result
-      writeFile outputFile result
-      putStrLn ("\nArquivo gerado: " ++ outputFile)
-    _ ->
-      putStrLn "Uso: ./TradutorDeArquivos <entrada.csv> <saida.json>"
+  contents <- getContents
+  let tokens  = L.alexScanTokens contents
+  let tokens' = filterTokens tokens
+  let pair    = parseCSV tokens'
+  let csv     = toCSV pair
+  let result  = toJSON csv
+  putStrLn result
+  writeFile "saida.json" result
 }

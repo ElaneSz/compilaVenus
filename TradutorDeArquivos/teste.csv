@@ -1,4 +1,6 @@
-Nome, Endereco, Cidade, Cadastro Ativo
-Cristiano Vasconcellos, "Rua Angelo Sampaio, 1000", Curitiba, true
-Gabriela Moreira, "Rua Paulo Malschitzki, 200", Joinvile, true
-Paulo Torrens, "Av. do Contorno, 12", Belo Horizonte, false
+Produto, Preco, Categoria, Disponivel
+Notebook Dell, "R$ 3.500,00", Informatica, true
+Mouse Logitech, "R$ 150,00", Informatica, true
+Cadeira Gamer, "R$ 1.200,00", "Moveis, Escritorio", true
+Monitor LG, "R$ 2.800,00", Informatica, false
+Teclado Mecanico, "R$ 450,00", Informatica, true
