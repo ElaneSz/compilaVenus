@@ -1,3 +1,5 @@
+module AST where
+
 type Id = String
 
 data Tipo = TDouble | TInt | TString | TVoid deriving (Show, Eq)
