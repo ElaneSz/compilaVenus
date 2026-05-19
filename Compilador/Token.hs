@@ -4,6 +4,7 @@ data Token
   -- Palavras reservadas
   = TKint | TKdouble | TKstring | TKvoid
   | TKif | TKelse | TKwhile | TKprint | TKreturn
+  | TKread
   -- Operadores aritméticos
   | TKmais | TKmenos | TKmult | TKdiv
   -- Operadores relacionais

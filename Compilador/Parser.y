@@ -20,6 +20,7 @@ import FuncAux
     while      { TKwhile }
     print      { TKprint }
     return     { TKreturn }
+    read       { TKread }
     '+'        { TKmais }
     '-'        { TKmenos }
     '*'        { TKmult }
@@ -57,15 +58,15 @@ import FuncAux
 -- REGRAS AQUI
 
 
--- pra executar, é só dar "cat teste.j-- | ./compilador" no terminal
+-- pra executar, é só dar "cat Teste.j-- | ./compilador" no terminal
 
 -- nivel 1: Feito e funcionando
 -- nivel 2: Feito e funcionando
--- nível 3: falta CmdLeitura, mas de resto ta funcionando
+-- nível 3: Feito e funcionando
 -- nivel 4: Feito e funcionando 
 -- nível 5: Feito e funcionando 
 
--- não estamos considerando read (por enquanto) e for
+-- não estamos considerando for
 
 -- ==== NIVEL 5 ====
 
@@ -111,6 +112,7 @@ Comando : CmdSe       { $1 }
         | CmdAtrib    { $1 }
         | CmdEscrita  { $1 }
         | Retorno     { $1 }
+        | CmdLeitura  { $1 }
         | ChamadaProc { $1 }
         
 CmdSe : if '(' ExpressaoLogica ')' Bloco            { If $3 $5 [] }
@@ -128,6 +130,9 @@ CmdAtrib : id '=' ExpressaoAritmetica ';' { Atrib $1 $3 }
 CmdEscrita : print '(' ExpressaoAritmetica ')' ';' { Imp $3 }
            | print '(' string_lit ')' ';'          { Imp (Lit $3) } 
 
+CmdLeitura : read '(' id ')' ';' { Leitura $3 }
+
+-- $3 é String, mas Imp espera Expr
 
 Retorno : return ExpressaoAritmetica ';' { Ret (Just  $2) }
         | return string_lit ';'          { Ret (Just  (Lit $2)) }
