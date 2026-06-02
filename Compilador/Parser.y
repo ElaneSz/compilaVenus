@@ -132,7 +132,7 @@ CmdEscrita : print '(' ExpressaoAritmetica ')' ';' { Imp $3 }
 
 CmdLeitura : read '(' id ')' ';' { Leitura $3 }
 
--- $3 é String, mas Imp espera Expr
+
 
 Retorno : return ExpressaoAritmetica ';' { Ret (Just  $2) }
         | return string_lit ';'          { Ret (Just  (Lit $2)) }
