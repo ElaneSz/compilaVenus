@@ -124,18 +124,6 @@ verificaExpr tg tl (Neg e) =    do
                                         errorMsg ("Tipos incompativel em negacao")
                                         return (Neg e', TInt)
 
-coerceArg :: Expr -> Tipo -> Tipo -> Result Expr
-coerceArg e tipoParam tipoArg = case (tipoParam, tipoArg) of
-                                    (TInt, TInt)       -> return e
-                                    (TDouble, TDouble) -> return e
-                                    (TDouble, TInt)    -> return (IntDouble e) -- converte silenciosamente
-                                    (TInt, TDouble)    -> do                   -- converte com advertência
-                                        warningMsg "Conversao de double para int em parametro"
-                                        return (DoubleInt e)
-                                    _ -> do
-                                        errorMsg "Tipo de parametro incompativel"
-                                        return e
-
 verificaExpr tg tl (Chamada nome args) =    case Map.lookup nome tg of
                                                 Nothing -> do
                                                     errorMsg ("Funcao nao declarada: " ++ nome)
@@ -151,6 +139,19 @@ verificaExpr tg tl (Chamada nome args) =    case Map.lookup nome tg of
                                                     -- 2. tipos dos argumentos
                                                     args'' <- mapM (\(e, tp, ta) -> coerceArg e tp ta) (zip3 args' tiposParams tiposArgs) -- zip3 | para ter (expressão, tipoParam, tipoArg) juntos.
                                                     return (Chamada nome args'', tipoRet)
+
+coerceArg :: Expr -> Tipo -> Tipo -> Result Expr
+coerceArg e tipoParam tipoArg = case (tipoParam, tipoArg) of
+                                    (TInt, TInt)       -> return e
+                                    (TDouble, TDouble) -> return e
+                                    (TString, TString) -> return e
+                                    (TDouble, TInt)    -> return (IntDouble e) -- converte silenciosamente
+                                    (TInt, TDouble)    -> do                   -- converte com advertência
+                                        warningMsg "Conversao de double para int em parametro"
+                                        return (DoubleInt e)
+                                    _ -> do
+                                        errorMsg "Tipo de parametro incompativel"
+                                        return e
 
 verificaExprR :: TabelaGlobal -> TabelaLocal -> ExprR -> Result ExprR
 verificaExprR tg tl (Rlt e1 e2) =   do
@@ -239,3 +240,113 @@ verificaExprL tg tl (And e1 e2) =   do
                                     e1' <- verificaExprL tg tl e1
                                     e2' <- verificaExprL tg tl e2
                                     return (And e1' e2')
+
+verificaExprL tg tl (Or e1 e2)  =   do
+                                    e1' <- verificaExprL tg tl e1
+                                    e2' <- verificaExprL tg tl e2
+                                    return (Or e1' e2')
+
+verificaExprL tg tl (Not e) =   do
+                                e' <- verificaExprL tg tl e
+                                return (Not e')
+
+verificaExprL tg tl (Rel exprR) =   do
+                                    exprR' <- verificaExprR tg tl exprR
+                                    return (Rel exprR')
+
+verificaComando :: TabelaGlobal -> TabelaLocal -> Tipo -> Comando -> Result Comando
+-- O Tipo extra é o tipo de retorno da função atual, necessário para verificar Ret
+
+verificaComando tg tl tr (If exprL b1 b2) = do
+                                            exprL' <- verificaExprL tg tl exprL
+                                            b1'    <- mapM (verificaComando tg tl tr) b1
+                                            b2'    <- mapM (verificaComando tg tl tr) b2
+                                            return (If exprL' b1' b2')
+
+verificaComando tg tl tr (While exprL b) = do
+                                            exprL' <- verificaExprL tg tl exprL
+                                            b'    <- mapM (verificaComando tg tl tr) b
+                                            return (While exprL' b')
+
+verificaComando tg tl tr (Atrib nome e) =   do
+                                            case Map.lookup nome tl of
+                                                Nothing -> do
+                                                    errorMsg ("Variavel nao declarada: " ++ nome)
+                                                    return (Atrib nome e)
+                                                Just tipoVar -> do
+                                                    (e', tipoExpr) <- verificaExpr tg tl e
+                                                    case (tipoVar, tipoExpr) of -- parecido com o coerceArg
+                                                        (TInt, TInt)       -> return (Atrib nome e')
+                                                        (TDouble, TDouble) -> return (Atrib nome e')
+                                                        (TString, TString) -> return (Atrib nome e')
+                                                        (TDouble, TInt)    -> return (Atrib nome (IntDouble e'))
+                                                        (TInt, TDouble)    ->   do
+                                                                                warningMsg ("Conversao de double para int na atribuicao de " ++ nome)
+                                                                                return (Atrib nome (DoubleInt e'))
+                                                        _ ->    do
+                                                                errorMsg ("Tipos incompativeis na atribuicao de " ++ nome)
+                                                                return (Atrib nome e')
+
+verificaComando tg tl tr (Leitura nomeVar) =   case Map.lookup nomeVar tl of
+                                                Just tipo -> return (Leitura nomeVar)
+                                                Nothing   -> do
+                                                    errorMsg ("Variavel nao declarada: " ++ nomeVar)
+                                                    return (Leitura nomeVar)
+
+verificaComando tg tl tr (Imp e) =  do
+                                    (e', _) <- verificaExpr tg tl e -- não precisamos do tipo dessa expressão (já que não precisamos fazer coerceArg)
+                                    return (Imp e')
+
+verificaComando tg tl tr (Ret Nothing) =    if tr == TVoid
+                                            then return (Ret Nothing)
+                                            else do
+                                                errorMsg ("Funcao de tipo " ++ show(tr) ++ " retornando vazio")
+                                                return (Ret Nothing)
+
+verificaComando tg tl tr (Ret (Just e)) =   do
+                                            (e', tipoExpr) <- verificaExpr tg tl e
+                                            case (tr, tipoExpr) of
+                                                (TVoid, _)         ->   do -- É mesmo necessário??
+                                                                        errorMsg ("Retornando algo em funcao de tipo void")
+                                                                        return (Ret (Just e'))
+                                                (TInt, TInt)       -> return (Ret (Just e'))
+                                                (TDouble, TDouble) -> return (Ret (Just e'))
+                                                (TString, TString) -> return (Ret (Just e'))
+                                                (TDouble, TInt)    -> return (Ret (Just (IntDouble e')))
+                                                (TInt, TDouble)    ->   do
+                                                                        warningMsg ("Conversao de double para int no retorno")
+                                                                        return (Ret (Just (DoubleInt e')))
+                                                _ ->    do
+                                                        errorMsg ("Tipos incompativeis no retorno")
+                                                        return (Ret (Just e'))
+
+-- esse aqui eu fiquei meio confuso de como fazer :(
+verificaComando tg tl retorno (Proc funcId args) =   do
+                                                     (chamada', _) <- verificaExpr tg tl (Chamada funcId args)
+                                                     case chamada' of
+                                                        Chamada _ args' -> return (Proc funcId args')
+                                                        _               -> return (Proc funcId args)
+
+verificaFuncao :: TabelaGlobal -> (Id, [Var], Bloco) -> Result (Id, [Var], Bloco)
+verificaFuncao tg (nomeFunc, vars, comandos) =   do
+                                                 tl <- constroiTabelaLocal vars
+                                                 let tipoRetorno = case Map.lookup nomeFunc tg of
+                                                                    Just (_, retFuncao) -> retFuncao
+                                                                    Nothing             -> TVoid
+                                                 bloco' <- mapM (verificaComando tg tl tipoRetorno) comandos
+                                                 return (nomeFunc, vars, bloco')
+
+verificaMain :: TabelaGlobal -> [Var] -> Bloco -> Result ([Var], Bloco)
+verificaMain tg vars comandos =   do
+                                  tl <- constroiTabelaLocal vars
+                                  bloco' <- mapM (verificaComando tg tl TVoid) comandos
+                                  return (vars, bloco')
+
+verificaPrograma :: Programa -> Result Programa
+verificaPrograma (Prog funcs corpoFuncs mainVars corpoMain) =   do
+                                                                tg <- constroiTabelaGlobal funcs
+                                                                corpoFuncs' <- mapM (verificaFuncao tg) corpoFuncs
+                                                                (mainVars', corpoMain') <- verificaMain tg mainVars corpoMain
+                                                                -- não sei se aqui muda alguma coisa eu usar o mainVars' ou só o mainVars
+                                                                return (Prog funcs corpoFuncs' mainVars' corpoMain')
+

@@ -29,6 +29,7 @@ $white+   ;
 "return"  { \s -> TKreturn }
 
 -- Identificador (depois das palavras reservadas)
+"read"    { \s -> TKread }
 $alpha $alnum*  { \s -> TKid s }
 
 -- Constantes numéricas (double antes de int)

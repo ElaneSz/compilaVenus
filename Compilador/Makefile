@@ -25,9 +25,9 @@ Lex.hs: Lex.x
 Parser.hs: Parser.y
 	$(HAPPY) $(GHC_FLAGS) Parser.y
 
-# Compila o executável
+
 $(TARGET): Lex.hs Parser.hs
-	$(GHC) Main.hs -o $(TARGET)
+	$(GHC) Main.hs Semantico.hs -o $(TARGET)
 
 # Remove arquivos gerados e compilados
 clean:
