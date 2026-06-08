@@ -39,7 +39,7 @@ getTipo (_ :#: (t, _)) = t
 insereFunc :: Funcao -> TabelaGlobal -> Result TabelaGlobal
 insereFunc (nome :->: (vars, ret)) tab =    if Map.member nome tab
                                             then do
-                                                errorMsg ("Funcao ja declarada: " ++ nome)
+                                                errorMsg (" Funcao ja declarada: " ++ nome)
                                                 return tab
                                             else return (Map.insert nome (map getTipo vars, ret) tab)
 
@@ -52,7 +52,7 @@ constroiTabelaGlobal (f:fs) =   do
 insereVar :: Var -> TabelaLocal -> Result TabelaLocal
 insereVar (nome :#: (tipo, _)) tab =    if Map.member nome tab
                                         then do
-                                            errorMsg ("Variavel ja declarada: " ++ nome)
+                                            errorMsg (" Variavel ja declarada: " ++ nome)
                                             return tab
                                         else return (Map.insert nome tipo tab)
 
@@ -69,7 +69,7 @@ verificaExpr tg tl (Lit s)             = return (Lit s, TString)
 verificaExpr tg tl (IdVar nome) =   case Map.lookup nome tl of
                                         Just tipo -> return (IdVar nome, tipo)
                                         Nothing   -> do
-                                            errorMsg ("Variavel nao declarada: " ++ nome)
+                                            errorMsg (" Variavel nao declarada: " ++ nome)
                                             return (IdVar nome, TInt)  -- tipo dummy para continuar
 verificaExpr tg tl (Add e1 e2) =    do
                                     (e1', t1) <- verificaExpr tg tl e1
@@ -134,7 +134,7 @@ verificaExpr tg tl (Chamada nome args) =    case Map.lookup nome tg of
                                                     let tiposArgs = map snd resultArgs
                                                     -- 1. número de argumentos
                                                     if length tiposArgs /= length tiposParams
-                                                        then errorMsg ("Numero de parametros errado: " ++ nome)
+                                                        then errorMsg (" Numero de parametros errado: " ++ nome)
                                                     else return ()
                                                     -- 2. tipos dos argumentos
                                                     args'' <- mapM (\(e, tp, ta) -> coerceArg e tp ta) (zip3 args' tiposParams tiposArgs) -- zip3 | para ter (expressão, tipoParam, tipoArg) juntos.
@@ -150,7 +150,7 @@ coerceArg e tipoParam tipoArg = case (tipoParam, tipoArg) of
                                         warningMsg (" Conversao de double para int em parametro: " ++ show e)
                                         return (DoubleInt e)
                                     _ -> do
-                                        errorMsg "Tipo de parametro incompativel"
+                                        errorMsg " Tipo de parametro incompativel"
                                         return e
 
 verificaExprR :: TabelaGlobal -> TabelaLocal -> ExprR -> Result ExprR
@@ -284,13 +284,13 @@ verificaComando tg tl tr (Atrib nome e) =   do
                                                                                 warningMsg (" Conversao de double para int na atribuicao de " ++ nome ++ " = " ++ show e')
                                                                                 return (Atrib nome (DoubleInt e'))
                                                         _ ->    do
-                                                                errorMsg ("Tipos incompativeis na atribuicao de " ++ nome)
+                                                                errorMsg (" Tipos incompativeis na atribuicao de " ++ nome)
                                                                 return (Atrib nome e')
 
 verificaComando tg tl tr (Leitura nomeVar) =    case Map.lookup nomeVar tl of
                                                     Just tipo -> return (Leitura nomeVar)
                                                     Nothing   -> do
-                                                        errorMsg ("Variavel nao declarada: " ++ nomeVar)
+                                                        errorMsg (" Variavel nao declarada: " ++ nomeVar)
                                                         return (Leitura nomeVar)
 
 verificaComando tg tl tr (Imp e) =  do
@@ -301,7 +301,7 @@ verificaComando _ _ tipoRetorno (Ret Nothing) =     do
                                                     case tipoRetorno of
                                                         TVoid -> return (Ret Nothing)
                                                         _     ->    do
-                                                                    errorMsg ("Funcao de tipo " ++ show(tipoRetorno) ++ " retornando vazio")
+                                                                    errorMsg (" Funcao de tipo " ++ show(tipoRetorno) ++ " retornando vazio")
                                                                     return (Ret Nothing)
 
 verificaComando tg tl tr (Ret (Just e)) =   do
@@ -318,7 +318,7 @@ verificaComando tg tl tr (Ret (Just e)) =   do
                                                                         warningMsg (" Conversao de double para int no retorno: " ++ show e')
                                                                         return (Ret (Just (DoubleInt e')))
                                                 _ ->    do
-                                                        errorMsg ("Tipos incompativeis no retorno")
+                                                        errorMsg (" Tipos incompativeis no retorno")
                                                         return (Ret (Just e'))
 
 -- esse aqui eu fiquei meio confuso de como fazer :(
