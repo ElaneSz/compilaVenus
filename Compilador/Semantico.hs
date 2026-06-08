@@ -80,7 +80,7 @@ verificaExpr tg tl (Add e1 e2) =    do
                                         (TDouble, TInt)     -> return (Add e1' (IntDouble e2'), TDouble)
                                         (TDouble, TDouble)  -> return (Add e1' e2', TDouble)
                                         _                   ->  do -- ele casa com qualquer valor que não foi coberto pelos casos anteriores
-                                                                errorMsg ("Tipos incompativeis em adicao")
+                                                                errorMsg (" Tipos incompativeis em adicao: " ++ show e1' ++ " + " ++ show e2')
                                                                 return (Add e1' e2', TInt)
 verificaExpr tg tl (Sub e1 e2) =    do
                                     (e1', t1) <- verificaExpr tg tl e1
@@ -91,7 +91,7 @@ verificaExpr tg tl (Sub e1 e2) =    do
                                         (TDouble, TInt)     -> return (Sub e1' (IntDouble e2'), TDouble)
                                         (TDouble, TDouble)  -> return (Sub e1' e2', TDouble)
                                         _                   ->  do -- ele casa com qualquer valor que não foi coberto pelos casos anteriores
-                                                                errorMsg ("Tipos incompativeis em subtracao")
+                                                                errorMsg (" Tipos incompativeis em subtracao: " ++ show e1' ++ " - " ++ show e2')
                                                                 return (Sub e1' e2', TInt)
 verificaExpr tg tl (Mul e1 e2) =    do
                                     (e1', t1) <- verificaExpr tg tl e1
@@ -102,7 +102,7 @@ verificaExpr tg tl (Mul e1 e2) =    do
                                         (TDouble, TInt)     -> return (Mul e1' (IntDouble e2'), TDouble)
                                         (TDouble, TDouble)  -> return (Mul e1' e2', TDouble)
                                         _                   ->  do -- ele casa com qualquer valor que não foi coberto pelos casos anteriores
-                                                                errorMsg ("Tipos incompativeis em multiplicacao")
+                                                                errorMsg (" Tipos incompativeis em multiplicacao: " ++ show e1' ++ " * " ++ show e2')
                                                                 return (Mul e1' e2', TInt)
 verificaExpr tg tl (Div e1 e2) =    do
                                     (e1', t1) <- verificaExpr tg tl e1
@@ -113,7 +113,7 @@ verificaExpr tg tl (Div e1 e2) =    do
                                         (TDouble, TInt)     -> return (Div e1' (IntDouble e2'), TDouble)
                                         (TDouble, TDouble)  -> return (Div e1' e2', TDouble)
                                         _                   ->  do -- ele casa com qualquer valor que não foi coberto pelos casos anteriores
-                                                                errorMsg ("Tipos incompativeis em divisao")
+                                                                errorMsg (" Tipos incompativeis em divisao: " ++ show e1' ++ " / " ++ show e2')
                                                                 return (Div e1' e2', TInt)
 verificaExpr tg tl (Neg e) =    do
                                 (e', t) <- verificaExpr tg tl e
@@ -147,7 +147,7 @@ coerceArg e tipoParam tipoArg = case (tipoParam, tipoArg) of
                                     (TString, TString) -> return e
                                     (TDouble, TInt)    -> return (IntDouble e) -- converte silenciosamente
                                     (TInt, TDouble)    -> do                   -- converte com advertência
-                                        warningMsg "Conversao de double para int em parametro"
+                                        warningMsg (" Conversao de double para int em parametro: " ++ show e)
                                         return (DoubleInt e)
                                     _ -> do
                                         errorMsg "Tipo de parametro incompativel"
@@ -241,7 +241,7 @@ verificaExprL tg tl (And e1 e2) =   do
                                     e2' <- verificaExprL tg tl e2
                                     return (And e1' e2')
 
-verificaExprL tg tl (Or e1 e2)  =   do
+verificaExprL tg tl (Or e1 e2) =    do
                                     e1' <- verificaExprL tg tl e1
                                     e2' <- verificaExprL tg tl e2
                                     return (Or e1' e2')
@@ -281,32 +281,33 @@ verificaComando tg tl tr (Atrib nome e) =   do
                                                         (TString, TString) -> return (Atrib nome e')
                                                         (TDouble, TInt)    -> return (Atrib nome (IntDouble e'))
                                                         (TInt, TDouble)    ->   do
-                                                                                warningMsg ("Conversao de double para int na atribuicao de " ++ nome)
+                                                                                warningMsg (" Conversao de double para int na atribuicao de " ++ nome ++ " = " ++ show e')
                                                                                 return (Atrib nome (DoubleInt e'))
                                                         _ ->    do
                                                                 errorMsg ("Tipos incompativeis na atribuicao de " ++ nome)
                                                                 return (Atrib nome e')
 
-verificaComando tg tl tr (Leitura nomeVar) =   case Map.lookup nomeVar tl of
-                                                Just tipo -> return (Leitura nomeVar)
-                                                Nothing   -> do
-                                                    errorMsg ("Variavel nao declarada: " ++ nomeVar)
-                                                    return (Leitura nomeVar)
+verificaComando tg tl tr (Leitura nomeVar) =    case Map.lookup nomeVar tl of
+                                                    Just tipo -> return (Leitura nomeVar)
+                                                    Nothing   -> do
+                                                        errorMsg ("Variavel nao declarada: " ++ nomeVar)
+                                                        return (Leitura nomeVar)
 
 verificaComando tg tl tr (Imp e) =  do
                                     (e', _) <- verificaExpr tg tl e -- não precisamos do tipo dessa expressão (já que não precisamos fazer coerceArg)
                                     return (Imp e')
 
-verificaComando tg tl tr (Ret Nothing) =    if tr == TVoid
-                                            then return (Ret Nothing)
-                                            else do
-                                                errorMsg ("Funcao de tipo " ++ show(tr) ++ " retornando vazio")
-                                                return (Ret Nothing)
+verificaComando _ _ tipoRetorno (Ret Nothing) =     do
+                                                    case tipoRetorno of
+                                                        TVoid -> return (Ret Nothing)
+                                                        _     ->    do
+                                                                    errorMsg ("Funcao de tipo " ++ show(tipoRetorno) ++ " retornando vazio")
+                                                                    return (Ret Nothing)
 
 verificaComando tg tl tr (Ret (Just e)) =   do
                                             (e', tipoExpr) <- verificaExpr tg tl e
                                             case (tr, tipoExpr) of
-                                                (TVoid, _)         ->   do -- É mesmo necessário??
+                                                (TVoid, _)         ->   do
                                                                         errorMsg ("Retornando algo em funcao de tipo void")
                                                                         return (Ret (Just e'))
                                                 (TInt, TInt)       -> return (Ret (Just e'))
@@ -314,7 +315,7 @@ verificaComando tg tl tr (Ret (Just e)) =   do
                                                 (TString, TString) -> return (Ret (Just e'))
                                                 (TDouble, TInt)    -> return (Ret (Just (IntDouble e')))
                                                 (TInt, TDouble)    ->   do
-                                                                        warningMsg ("Conversao de double para int no retorno")
+                                                                        warningMsg (" Conversao de double para int no retorno: " ++ show e')
                                                                         return (Ret (Just (DoubleInt e')))
                                                 _ ->    do
                                                         errorMsg ("Tipos incompativeis no retorno")
