@@ -126,7 +126,7 @@ verificaExpr tg tl (Neg e) =    do
 
 verificaExpr tg tl (Chamada nome args) =    case Map.lookup nome tg of
                                                 Nothing -> do
-                                                    errorMsg ("Funcao nao declarada: " ++ nome)
+                                                    errorMsg (" Funcao nao declarada: " ++ nome)
                                                     return (Chamada nome args, TInt)
                                                 Just (tiposParams, tipoRet) -> do
                                                     resultArgs <- mapM (verificaExpr tg tl) args
@@ -271,7 +271,7 @@ verificaComando tg tl tr (While exprL b) = do
 verificaComando tg tl tr (Atrib nome e) =   do
                                             case Map.lookup nome tl of
                                                 Nothing -> do
-                                                    errorMsg ("Variavel nao declarada: " ++ nome)
+                                                    errorMsg (" Variavel nao declarada: " ++ nome)
                                                     return (Atrib nome e)
                                                 Just tipoVar -> do
                                                     (e', tipoExpr) <- verificaExpr tg tl e
@@ -290,7 +290,7 @@ verificaComando tg tl tr (Atrib nome e) =   do
 verificaComando tg tl retorno (Leitura nomeVar) =   do
                                                     case Map.lookup nomeVar tl of
                                                         Nothing -> do
-                                                            errorMsg ("Variavel nao declarada: " ++ nomeVar)
+                                                            errorMsg (" Variavel nao declarada: " ++ nomeVar)
                                                             return (Leitura nomeVar)
                                                         Just _ -> return (Leitura nomeVar)
 
@@ -309,7 +309,7 @@ verificaComando tg tl tr (Ret (Just e)) =   do
                                             (e', tipoExpr) <- verificaExpr tg tl e
                                             case (tr, tipoExpr) of
                                                 (TVoid, _)         ->   do
-                                                                        errorMsg ("Retornando algo em funcao de tipo void")
+                                                                        errorMsg (" Retornando algo em funcao de tipo void")
                                                                         return (Ret (Just e'))
                                                 (TInt, TInt)       -> return (Ret (Just e'))
                                                 (TDouble, TDouble) -> return (Ret (Just e'))
