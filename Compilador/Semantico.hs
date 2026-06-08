@@ -121,7 +121,7 @@ verificaExpr tg tl (Neg e) =    do
                                     TInt    -> return (Neg e', TInt)
                                     TDouble -> return (Neg e', TDouble)
                                     _       -> do -- ele casa com qualquer valor que não foi coberto pelos casos anteriores
-                                        errorMsg ("Tipos incompativel em negacao")
+                                        errorMsg (" Tipos incompativel em negacao: " ++ show e')
                                         return (Neg e', TInt)
 
 verificaExpr tg tl (Chamada nome args) =    case Map.lookup nome tg of
@@ -164,7 +164,7 @@ verificaExprR tg tl (Rlt e1 e2) =   do
                                         (TDouble, TDouble) -> return (Rlt e1' e2')
                                         (TString, TString) -> return (Rlt e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " < " ++ show e2')
                                             return (Rlt e1' e2')
 
 verificaExprR tg tl (Rgt e1 e2) =   do
@@ -177,7 +177,7 @@ verificaExprR tg tl (Rgt e1 e2) =   do
                                         (TDouble, TDouble) -> return (Rgt e1' e2')
                                         (TString, TString) -> return (Rgt e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " > " ++ show e2')
                                             return (Rgt e1' e2')
 
 verificaExprR tg tl (Rle e1 e2) =   do
@@ -190,7 +190,7 @@ verificaExprR tg tl (Rle e1 e2) =   do
                                         (TDouble, TDouble) -> return (Rle e1' e2')
                                         (TString, TString) -> return (Rle e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " <= " ++ show e2')
                                             return (Rle e1' e2')
 
 verificaExprR tg tl (Rge e1 e2) =   do
@@ -203,7 +203,7 @@ verificaExprR tg tl (Rge e1 e2) =   do
                                         (TDouble, TDouble) -> return (Rge e1' e2')
                                         (TString, TString) -> return (Rge e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " >= " ++ show e2')
                                             return (Rge e1' e2')
 
 verificaExprR tg tl (Req e1 e2) =   do
@@ -216,7 +216,7 @@ verificaExprR tg tl (Req e1 e2) =   do
                                         (TDouble, TDouble) -> return (Req e1' e2')
                                         (TString, TString) -> return (Req e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " == " ++ show e2')
                                             return (Req e1' e2')
 
 verificaExprR tg tl (Rdif e1 e2) =   do
@@ -229,7 +229,7 @@ verificaExprR tg tl (Rdif e1 e2) =   do
                                         (TDouble, TDouble) -> return (Rdif e1' e2')
                                         (TString, TString) -> return (Rdif e1' e2')
                                         _ -> do
-                                            errorMsg "Tipos incompativeis em expressao relacional"
+                                            errorMsg (" Tipos incompativeis em expressao relacional: " ++ show e1' ++ " /= " ++ show e2')
                                             return (Rdif e1' e2')
 
 verificaExprL :: TabelaGlobal -> TabelaLocal -> ExprL -> Result ExprL
