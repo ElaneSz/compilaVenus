@@ -287,11 +287,12 @@ verificaComando tg tl tr (Atrib nome e) =   do
                                                                 errorMsg (" Tipos incompativeis na atribuicao de " ++ nome)
                                                                 return (Atrib nome e')
 
-verificaComando tg tl tr (Leitura nomeVar) =    case Map.lookup nomeVar tl of
-                                                    Just tipo -> return (Leitura nomeVar)
-                                                    Nothing   -> do
-                                                        errorMsg (" Variavel nao declarada: " ++ nomeVar)
-                                                        return (Leitura nomeVar)
+verificaComando tg tl retorno (Leitura nomeVar) =   do
+                                                    case Map.lookup nomeVar tl of
+                                                        Nothing -> do
+                                                            errorMsg ("Variavel nao declarada: " ++ nomeVar)
+                                                            return (Leitura nomeVar)
+                                                        Just _ -> return (Leitura nomeVar)
 
 verificaComando tg tl tr (Imp e) =  do
                                     (e', _) <- verificaExpr tg tl e -- não precisamos do tipo dessa expressão (já que não precisamos fazer coerceArg)
