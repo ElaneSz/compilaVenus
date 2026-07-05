@@ -2,6 +2,8 @@ module Gerador where
 
 import Control.Monad.State
 import AST
+import Data.Map (Map)
+import qualified Data.Map as Map
 import Semantico (TabelaGlobal, TabelaLocal)
 
 novoLabel :: State Int String
@@ -59,6 +61,11 @@ genInt  i
 genDouble :: Double -> String
 genDouble d = "\tldc2_w " ++ show d ++ "\n"
 
+genOp :: Tipo -> String -> String
+genOp TInt    op = "\ti" ++ op ++ "\n"
+genOp TDouble op = "\td" ++ op ++ "\n"
+genOp _       op = "\ti" ++ op ++ "\n"
+
 -- Constante inteira
 genExpr c tl ti (Const (CInt n))    = return (TInt, genInt n)
 
@@ -69,7 +76,7 @@ genExpr c tl ti (Const (CDouble d)) = return (TDouble, genDouble d)
 genExpr c tl ti (Lit s) = return (TString, "\tldc \"" ++ s ++ "\"\n")
 
 -- Variavel
-genExpr c tl ti (IdVar nome) =    let tipo = getTipoVar tl nome
+genExpr c tl ti (IdVar nome) =  let tipo = getTipoVar tl nome
                                     idx  = case Map.lookup nome ti of
                                                Just i  -> i
                                                Nothing -> 0
@@ -78,11 +85,6 @@ genExpr c tl ti (IdVar nome) =    let tipo = getTipoVar tl nome
                                                 TDouble -> "\tdload " -- Para double
                                                 _       -> "\taload " -- Para string
                                 in return (tipo, instr ++ show idx ++ "\n")
-
-genOp :: Tipo -> String -> String
-genOp TInt    op = "\ti" ++ op ++ "\n"
-genOp TDouble op = "\td" ++ op ++ "\n"
-genOp _       op = "\ti" ++ op ++ "\n"
 
 genExpr c tl ti (Add e1 e2) =   do
                                 (t1, e1') <- genExpr c tl ti e1

@@ -166,6 +166,7 @@ ExpressaoRelacional : ExpressaoAritmetica '<'  ExpressaoAritmetica { Rlt $1 $3 }
 ExpressaoLogica : ExpressaoLogica '&&' ExpressaoLogica { And $1 $3 }
                 | ExpressaoLogica '||' ExpressaoLogica { Or $1 $3 }
                 | '!'  ExpressaoLogica                 { Not $2 }
+                | '!' '(' ExpressaoLogica ')'          { Not $3 }
                 | ExpressaoRelacional                  { Rel $1 }
 
 ChamadaFuncao : id '(' ParamReais ')' { Chamada $1 $3 }
