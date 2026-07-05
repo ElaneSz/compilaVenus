@@ -121,7 +121,7 @@ genExpr c tl ti (Chamada nome args) =   do
                                         args' <- mapM (genExpr c tl ti) args
                                         let argsCode = concatMap snd args'
                                         -- instrucao invokestatic
-                                        -- por enquanto deixe como placeholder... completar quando chegarmos em genProg ^_^
+                                        -- por enquanto deixei como placeholder... completar quando chegarmos em genProg ^_^
                                         return (TInt, argsCode ++ "\tinvokestatic TODO\n")
 
 genExprR :: String -> TabelaLocal -> TabelaIndices -> String -> String -> ExprR -> State Int String
@@ -180,4 +180,61 @@ genExprL c tl ti lv lf (Not e) =    do
                                     return e'
 
 genExprL c tl ti lv lf (Rel exprR) = genExprR c tl ti lv lf exprR
+
+genCmd :: String -> TabelaLocal -> TabelaIndices -> Comando -> State Int String
+genCmd c tl ti (Atrib nome e) = do
+                                (t, e') <- genExpr c tl ti e
+                                let idx = case Map.lookup nome ti of
+                                              Just i  -> i
+                                              Nothing -> 0
+                                let instr = case t of
+                                                TInt    -> "\tistore "
+                                                TDouble -> "\tdstore "
+                                                _       -> "\tastore "
+                                return (e' ++ instr ++ show idx ++ "\n")
+
+genCmd c tl ti (Imp e) = do
+                         (t, e') <- genExpr c tl ti e
+                         let printMethod = case t of
+                                             TInt    -> "\tinvokevirtual java/io/PrintStream/print(I)V\n"
+                                             TDouble -> "\tinvokevirtual java/io/PrintStream/print(D)V\n"
+                                             _       -> "\tinvokevirtual java/io/PrintStream/print(Ljava/lang/String;)V\n"
+                         return ("\tgetstatic java/lang/System/out Ljava/io/PrintStream;\n" ++ e' ++ printMethod)
+
+genCmd c tl ti (Ret Nothing) = return "\treturn\n"
+
+genCmd c tl ti (Ret (Just e)) = do
+                                (t, e') <- genExpr c tl ti e
+                                let instr = case t of
+                                                TInt    -> "\tireturn\n"
+                                                TDouble -> "\tdreturn\n"
+                                                _       -> "\tareturn\n"
+                                return (e' ++ instr)
+
+genCmd c tl ti (Proc nome args) = do
+                                  args' <- mapM (genExpr c tl ti) args
+                                  let argsCode = concatMap snd args'
+                                  return (argsCode ++ "\tinvokestatic TODO\n")
+
+genCmd c tl ti (While exprL bloco) = do
+                                     li <- novoLabel
+                                     lv <- novoLabel
+                                     lf <- novoLabel
+                                     e'  <- genExprL c tl ti lv lf exprL
+                                     b'  <- genBloco c tl ti bloco
+                                     return (li ++ ":\n" ++ e' ++ lv ++ ":\n" ++ b' ++ "\tgoto " ++ li ++ "\n" ++ lf ++ ":\n")
+
+genCmd c tl ti (If exprL b1 b2) = do
+                                  lv  <- novoLabel
+                                  lf  <- novoLabel
+                                  lf2 <- novoLabel
+                                  e'  <- genExprL c tl ti lv lf exprL
+                                  b1' <- genBloco c tl ti b1
+                                  b2' <- genBloco c tl ti b2
+                                  return (e' ++ lv ++ ":\n" ++ b1' ++ "\tgoto " ++ lf2 ++ "\n" ++ lf ++ ":\n" ++ b2' ++ lf2 ++ ":\n")
+
+genBloco :: String -> TabelaLocal -> TabelaIndices -> Bloco -> State Int String
+genBloco c tl ti bloco = do
+                         cmds <- mapM (genCmd c tl ti) bloco
+                         return (concat cmds)
 
