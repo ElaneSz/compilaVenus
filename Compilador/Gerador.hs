@@ -90,7 +90,8 @@ genExpr :: String -> TabelaLocal -> TabelaIndices -> Expr -> State Int (Tipo, St
 
 genInt :: Int -> String
 genInt  i
-        | i >= -1 && i <= 5  = "\ticonst_" ++ show i ++ "\n"
+        | i == -1 = "\ticonst_m1\n" 
+        | i >= 0 && i <= 5  = "\ticonst_" ++ show i ++ "\n"
         | i >= -128 && i <= 127   = "\tbipush " ++ show i ++ "\n"
         | i >= -32768 && i <= 32767 = "\tsipush " ++ show i ++ "\n"
         | otherwise = "\tldc " ++ show i ++ "\n"
