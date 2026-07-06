@@ -36,12 +36,49 @@ genMainFim = return "\treturn\n.end method\n"
 -- gerar :: String -> Programa -> String
 -- gerar nome p = fst $ runState (genProg nome p) 0
 
+-- Retorna quantos espaços na stack ocupa cada tipo
+-- Todos ocupam 1, só double e long que ocupam 2
+tamanhoTipo :: Tipo -> Int
+tamanhoTipo TDouble = 2
+tamanhoTipo _       = 1
+
+-- Função pra calcular o .limit locals quando a gente for definir uma função (vai ser usado no genFuncao)
+numLimitLocals :: [Var] -> Int
+numLimitLocals vars = sum (map pegaTamanho vars)
+                 where pegaTamanho (_ :#: (t, _)) = tamanhoTipo t
+
+-- Pra facilitar na hora de fazer o Chamada, pega o tipo de um parâmetro da função, e retorna ele em "linguagem jvm"
+-- Usar com um concatMap com isso nos parametros da função + chamar de novo para o retorno da função
+-- pra sair algo do tipo invokestatic NomeDoPrograma/NomeFuncao(II)V
+tipoJVM :: Tipo -> String
+tipoJVM TInt    = "I"
+tipoJVM TDouble = "D"
+tipoJVM TString = "Ljava/lang/String;"
+tipoJVM TVoid   = "V"
+
+-- Tabela global (nome da funcao -> tipos dos parametros e tipo de retorno), construida a partir da lista de Funcao
+-- A gente não vai precisar do nome dos parâmetros aqui, já que eles vão estar na TabelaLocal da função
+constroiTabelaGlobal :: [Funcao] -> TabelaGlobal
+constroiTabelaGlobal funcs = Map.fromList (map paraAssinatura funcs)
+                                where paraAssinatura (nome :->: (vars, ret)) = (nome, (map pegaTipoDaVar vars, ret))
+                                      pegaTipoDaVar (_ :#: (t, _)) = t
+
+-- Tabela local de tipos (nome da variavel -> tipo), parecida com constroiTabelaIndices, só que guarda o tipo em vez do indice
+-- Vamo precisar pra conseguir usar de fato o getTipoVar
+constroiTabelaLocal :: [Var] -> TabelaLocal
+constroiTabelaLocal vars = Map.fromList (map paraTipo vars)
+                              where paraTipo (nome :#: (t, _)) = (nome, t)
+
 -- [precisa de uma tabela que mapeie nome -> índice] vai precisar dessa tabela para gerar os iload/dload
 type TabelaIndices = Map Id Int
 
 constroiTabelaIndices :: [Var] -> TabelaIndices
-constroiTabelaIndices vars =    Map.fromList (zip (map getNome vars) [0..])
+constroiTabelaIndices vars =    Map.fromList (zip (map getNome vars) (indices vars 0))
+                                -- Agora a gente consegue pegar o tamanho certo do frame de cada variável
+                                -- Double e long ocupam 2 espaços na pilha, o resto é 1 (mas a gente não tem long)
                                 where getNome (nome :#: _) = nome
+                                      indices [] _ = []
+                                      indices ((_ :#: (t, _)):vs) f = f : indices vs (f + tamanhoTipo t)
 
 -- [função para pegar o tipo de uma variavel pelo nome] -> vamos precisar dela em genExpr para saber se usa iload ou dload
 getTipoVar :: TabelaLocal -> Id -> Tipo
