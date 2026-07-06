@@ -329,6 +329,19 @@ verificaComando tg tl retorno (Proc funcId args) =   do
                                                         Chamada _ args' -> return (Proc funcId args')
                                                         _               -> return (Proc funcId args)
 
+-- Verifica se um bloco garante um "return" em todo caminho de execução.
+-- Só olho o último comando do bloco (o resto antes dele não importa pra essa garantia),
+-- e no caso de um If, exige que os DOIS ramos (if e else) garantam retorno 
+-- já que um if sem "else" vira If _ _ [], e blocoRetorna [] = False cobre exatamente esse caso.
+blocoRetorna :: Bloco -> Bool
+blocoRetorna [] = False
+blocoRetorna cmds = comandoRetorna (last cmds)
+
+comandoRetorna :: Comando -> Bool
+comandoRetorna (Ret _)      = True
+comandoRetorna (If _ b1 b2) = blocoRetorna b1 && blocoRetorna b2
+comandoRetorna _            = False
+
 verificaFuncao :: TabelaGlobal -> (Id, [Var], Bloco) -> Result (Id, [Var], Bloco)
 verificaFuncao tg (nomeFunc, vars, comandos) =   do
                                                  tl <- constroiTabelaLocal vars
@@ -336,7 +349,11 @@ verificaFuncao tg (nomeFunc, vars, comandos) =   do
                                                                     Just (_, retFuncao) -> retFuncao
                                                                     Nothing             -> TVoid
                                                  bloco' <- mapM (verificaComando tg tl tipoRetorno) comandos
-                                                 return (nomeFunc, vars, bloco')
+                                                 if tipoRetorno /= TVoid && not (blocoRetorna bloco')
+                                                    then do
+                                                        errorMsg ("Funcao " ++ nomeFunc ++ " deveria retornar " ++ show tipoRetorno ++ " mas nem todo caminho de codigo garante um retorno.")
+                                                        return (nomeFunc, vars, bloco')
+                                                    else return (nomeFunc, vars, bloco')
 
 verificaMain :: TabelaGlobal -> [Var] -> Bloco -> Result ([Var], Bloco)
 verificaMain tg vars comandos =   do
