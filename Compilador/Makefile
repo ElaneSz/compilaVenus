@@ -25,12 +25,19 @@ Lex.hs: Lex.x
 Parser.hs: Parser.y
 	$(HAPPY) $(GHC_FLAGS) Parser.y
 
+# Compila o executável garantindo a inclusão do Semantico, Gerador e AST
+$(TARGET): Lex.hs Parser.hs AST.hs Semantico.hs Gerador.hs Main.hs
+	$(GHC) Main.hs Semantico.hs Gerador.hs AST.hs -o $(TARGET)
 
-$(TARGET): Lex.hs Parser.hs
-	$(GHC) Main.hs Semantico.hs -o $(TARGET)
 
-# Remove arquivos gerados e compilados
+run: $(TARGET)
+	cat Teste.j-- | ./$(TARGET)
+	@if [ -f Programa.j ]; then \
+		java -jar jasmin.jar Programa.j; \
+		echo "\n=== Executando o programa na JVM ==="; \
+		java Programa; \
+	fi
+
+# Remove arquivos gerados e compilados (limpa também arquivos .j eventualmente gerados)
 clean:
-	rm -f $(TARGET) $(GEN_HS) *.hi *.o Parser.info
-
-# echo "{ int x; x = 1 + 2; }" | ./compilador 
+	rm -f $(TARGET) $(GEN_HS) *.hi *.o Parser.info *.j

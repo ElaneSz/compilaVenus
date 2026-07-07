@@ -174,10 +174,19 @@ genExpr c tg tl ti (Chamada nome args) =   do
                                         return (tipoRet, argsCode ++ "\tinvokestatic " ++ c ++ "/" ++ nome ++ descritor ++ "\n")
 
 genExprR :: String -> TabelaGlobal -> TabelaLocal -> TabelaIndices -> String -> String -> ExprR -> State Int String
---                                                                     lv        lf
+--                                                                       lv        lf
+
+-- Função auxiliar que traduz os operadores específicos para Int e Double
 genRel :: Tipo -> String -> String -> String
 genRel TInt    op lv = "\tif_icmp" ++ op ++ " " ++ lv ++ "\n"
-genRel TDouble op lv = "\tdcmpg\n\tifgt " ++ lv ++ "\n" -- simplificado
+genRel TDouble op lv = case op of
+                         "lt" -> "\tdcmpg\n\tiflt " ++ lv ++ "\n" -- <  (se dcmpg < 0)
+                         "gt" -> "\tdcmpl\n\tifgt " ++ lv ++ "\n" -- >  (se dcmpl > 0)
+                         "le" -> "\tdcmpg\n\tifle " ++ lv ++ "\n" -- <= (se dcmpg <= 0)
+                         "ge" -> "\tdcmpl\n\tifge " ++ lv ++ "\n" -- >= (se dcmpl >= 0)
+                         "eq" -> "\tdcmpg\n\tifeq " ++ lv ++ "\n" -- == (se dcmpg == 0)
+                         "ne" -> "\tdcmpg\n\tifne " ++ lv ++ "\n" -- /= (se dcmpg /= 0)
+                         _    -> "\tif_icmp" ++ op ++ " " ++ lv ++ "\n"
 genRel _       op lv = "\tif_icmp" ++ op ++ " " ++ lv ++ "\n"
 
 genExprR c tg tl ti lv lf (Rlt e1 e2) =    do
