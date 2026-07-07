@@ -1,0 +1,207 @@
+-- =============================================================================
+-- ADIÇÕES PARA SUPORTE AOS OPERADORES LÓGICOS BIT A BIT (& e |)
+-- =============================================================================
+-- Este arquivo contém todas as alterações necessárias para adicionar os
+-- operadores bit a bit & (AND) e | (OR) ao compilador.
+--
+-- DECISÃO DE DESIGN:
+-- Os operadores bit a bit operam APENAS sobre Int (igual a Java).
+-- Tentar aplicá-los a double ou string gera erro semântico.
+-- Eles vivem em ExpressaoAritmetica (não em ExpressaoLogica), pois
+-- produzem um valor numérico Int, não um booleano.
+-- Precedência: menor que + e -, maior que == e /= (padrão C/Java).
+-- =============================================================================
+
+
+-- =============================================================================
+-- [1] AST.hs
+-- =============================================================================
+-- ONDE COLAR: em data Expr, adicione BitAnd e BitOr ao lado dos outros
+-- construtores binários (Add, Sub, Mul, Div).
+--
+-- ANTES:
+--   data Expr = Add Expr Expr | Sub Expr Expr | Mul Expr Expr
+--               | Div Expr Expr | Neg Expr | Const TCons
+--               | IdVar String | Chamada Id [Expr] | Lit String
+--               | IntDouble Expr | DoubleInt Expr deriving Show
+--
+-- DEPOIS:
+--   data Expr = Add Expr Expr | Sub Expr Expr | Mul Expr Expr
+--               | Div Expr Expr | Neg Expr | Const TCons
+--               | IdVar String | Chamada Id [Expr] | Lit String
+--               | IntDouble Expr | DoubleInt Expr
+--               | BitAnd Expr Expr | BitOr Expr Expr deriving Show
+--
+-- BitAnd representa o operador &  (ex: x & y)
+-- BitOr  representa o operador |  (ex: x | y)
+
+
+-- =============================================================================
+-- [2] Token.hs
+-- =============================================================================
+-- ONDE COLAR: na seção de operadores lógicos, junto com TKand, TKor, TKnot
+--
+-- ANTES:
+--   | TKand | TKor | TKnot
+--
+-- DEPOIS:
+--   | TKand | TKor | TKnot
+--   | TKbitand | TKbitor
+--
+-- TKbitand → token para &
+-- TKbitor  → token para |
+-- (nomes distintos de TKand/TKor para não confundir & com && e | com ||)
+
+
+-- =============================================================================
+-- [3] Lex.x
+-- =============================================================================
+-- ONDE COLAR: na seção de operadores lógicos, DEPOIS das regras de && e ||
+-- (os tokens de 2 chars devem vir antes dos de 1 char para o Alex não
+-- confundir & com && e | com ||  — isso já é garantido pela posição)
+--
+-- ANTES:
+--   "&&"  { \s -> TKand }
+--   "||"  { \s -> TKor  }
+--   "!"   { \s -> TKnot }
+--
+-- DEPOIS:
+--   "&&"  { \s -> TKand    }
+--   "||"  { \s -> TKor     }
+--   "!"   { \s -> TKnot    }
+--   "&"   { \s -> TKbitand }
+--   "|"   { \s -> TKbitor  }
+
+
+-- =============================================================================
+-- [4] Parser.y
+-- =============================================================================
+
+-- ONDE COLAR (a): na seção %token, junto com '&&', '||', '!'
+--
+-- ANTES:
+--     '&&'       { TKand }
+--     '||'       { TKor  }
+--     '!'        { TKnot }
+--
+-- DEPOIS:
+--     '&&'       { TKand    }
+--     '||'       { TKor     }
+--     '!'        { TKnot    }
+--     '&'        { TKbitand }
+--     '|'        { TKbitor  }
+
+-- ONDE COLAR (b): na seção de precedências, junto com os outros %left
+-- Bit a bit tem precedência MENOR que + e -, MAIOR que relacionais.
+-- Inserir entre os relacionais e o +/-:
+--
+-- ANTES:
+--   %left '<' '>' '<=' '>=' '==' '/='
+--   %left '+' '-'
+--   %left '*' '/'
+--   %left NEG
+--
+-- DEPOIS:
+--   %left '<' '>' '<=' '>=' '==' '/='
+--   %left '&' '|'
+--   %left '+' '-'
+--   %left '*' '/'
+--   %left NEG
+
+-- ONDE COLAR (c): em ExpressaoAritmetica, junto com Add, Sub, Mul, Div
+-- Adicione as duas novas produções após a regra de Div:
+--
+-- ANTES:
+--   ExpressaoAritmetica : ...
+--                       | ExpressaoAritmetica '/' ExpressaoAritmetica  { Div $1 $3 }
+--                       | '-' ExpressaoAritmetica %prec NEG            { Neg $2    }
+--                       | ChamadaFuncao                                { $1        }
+--
+-- DEPOIS:
+--   ExpressaoAritmetica : ...
+--                       | ExpressaoAritmetica '/' ExpressaoAritmetica  { Div    $1 $3 }
+--                       | ExpressaoAritmetica '&' ExpressaoAritmetica  { BitAnd $1 $3 }
+--                       | ExpressaoAritmetica '|' ExpressaoAritmetica  { BitOr  $1 $3 }
+--                       | '-' ExpressaoAritmetica %prec NEG            { Neg $2       }
+--                       | ChamadaFuncao                                { $1           }
+
+
+-- =============================================================================
+-- [5] Semantico.hs
+-- =============================================================================
+-- Os operadores bit a bit só fazem sentido para Int.
+-- Reutilizamos o padrão já existente de Add/Sub/Mul/Div.
+--
+-- ONDE COLAR: em verificaExpr, logo após o caso de Div (ou Neg).
+-- Os dois novos casos seguem exatamente o mesmo padrão dos operadores
+-- aritméticos, mas só aceitam TInt nos dois lados.
+--
+-- Cole este trecho completo após o caso de Div:
+
+-- verificaExpr tg tl (BitAnd e1 e2) = do
+--     (e1', t1) <- verificaExpr tg tl e1
+--     (e2', t2) <- verificaExpr tg tl e2
+--     case (t1, t2) of
+--         (TInt, TInt) -> return (BitAnd e1' e2', TInt)
+--         _            -> do
+--             errorMsg (" Operador & só se aplica a Int: "
+--                       ++ show e1' ++ " & " ++ show e2')
+--             return (BitAnd e1' e2', TInt)
+--
+-- verificaExpr tg tl (BitOr e1 e2) = do
+--     (e1', t1) <- verificaExpr tg tl e1
+--     (e2', t2) <- verificaExpr tg tl e2
+--     case (t1, t2) of
+--         (TInt, TInt) -> return (BitOr e1' e2', TInt)
+--         _            -> do
+--             errorMsg (" Operador | só se aplica a Int: "
+--                       ++ show e1' ++ " | " ++ show e2')
+--             return (BitOr e1' e2', TInt)
+--
+-- Não é preciso alterar mais nada no Semantico — coerceArg, verificaComando,
+-- verificaFuncao e verificaPrograma não precisam saber dos novos operadores,
+-- pois eles só aparecem dentro de Expr, que já é tratada por verificaExpr.
+
+
+-- =============================================================================
+-- [6] Gerador.hs
+-- =============================================================================
+-- Na JVM, os operadores bit a bit para int são:
+--   iand  →  &
+--   ior   →  |
+-- Eles funcionam exatamente como iadd, isub, etc. — dois ints na pilha,
+-- resultado int. Por isso podemos reutilizar genOp diretamente!
+--
+-- ONDE COLAR: em genExpr, logo após o caso de Div (ou Neg).
+-- Cole este trecho completo:
+
+-- genExpr c tg tl ti (BitAnd e1 e2) = do
+--     (t1, e1') <- genExpr c tg tl ti e1
+--     (t2, e2') <- genExpr c tg tl ti e2
+--     return (TInt, e1' ++ e2' ++ "\tiand\n")
+--
+-- genExpr c tg tl ti (BitOr e1 e2) = do
+--     (t1, e1') <- genExpr c tg tl ti e1
+--     (t2, e2') <- genExpr c tg tl ti e2
+--     return (TInt, e1' ++ e2' ++ "\tior\n")
+--
+-- Nota: não usamos genOp aqui porque genOp monta "\ti" ++ op ++ "\n",
+-- o que geraria "\tiand\n" corretamente para "and" — mas "ior" funcionaria
+-- também. Optamos por ser explícitos para deixar o código mais legível.
+-- Se preferir consistência com o restante, pode usar:
+--   return (TInt, e1' ++ e2' ++ genOp TInt "and")   -- para BitAnd
+--   return (TInt, e1' ++ e2' ++ genOp TInt "or" )   -- para BitOr
+
+
+-- =============================================================================
+-- EXEMPLO DE USO (arquivo .j--)
+-- =============================================================================
+-- {
+--   int a, b, c;
+--   a = 12;
+--   b = 10;
+--   c = a & b;   -- 12 & 10 = 8  (1100 & 1010 = 1000)
+--   print(c);
+--   c = a | b;   -- 12 | 10 = 14 (1100 | 1010 = 1110)
+--   print(c);
+-- }
