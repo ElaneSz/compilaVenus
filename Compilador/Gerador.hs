@@ -263,7 +263,7 @@ genCmd c tg tl ti (Leitura nome) = do
                                    let (metodo, retornoMetodo, instr) = case tipo of
                                                                           TInt    -> ("nextInt",    "I",                 "\tistore ")
                                                                           TDouble -> ("nextDouble", "D",                 "\tdstore ")
-                                                                          _       -> ("nextLine",   "Ljava/lang/String", "\tastore ")
+                                                                          _       -> ("nextLine",   "Ljava/lang/String;", "\tastore ")
 
                                    return ("\tnew java/util/Scanner\n" ++ "\tdup\n" ++ "\tgetstatic java/lang/System/in Ljava/io/InputStream;\n" 
                                            ++ "\tinvokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V\n" ++ "\tinvokevirtual java/util/Scanner/" 
