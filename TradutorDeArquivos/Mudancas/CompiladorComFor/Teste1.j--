@@ -1,0 +1,63 @@
+void imprimir(string s, double r) 
+{
+  print (s);
+  print (r);
+  return;
+}
+
+int calcular(int x, double y) 
+{
+  int resultado;
+  
+  if (x >= 10 && y /= 0.0) {
+      resultado = x * 2;
+  } else {
+      resultado = x + 5;
+  }
+  
+  return resultado;
+}
+
+void exibirMensagem() 
+{
+  string msg;
+  msg = "Processamento concluido!";
+  print(msg);
+  return;
+}
+
+{
+  int contador;
+  double valor;
+  string inicio;
+
+  contador = 0;
+  valor = 10.5;
+  inicio = "Iniciando o programa";
+
+  print(inicio);
+  print("Entrada contador:");
+  read(contador);
+
+  while (contador < 100 || !(valor <= 1.0)) {
+    contador = contador + 1;
+    valor = valor / 2.0;
+    
+    if (contador == 50) {
+        contador = contador * 10;
+    }
+    print(contador);
+    print(valor);
+  }
+
+  contador = calcular(contador, valor + 1000000);
+  print(contador);
+  exibirMensagem();
+
+  imprimir("Teste cast int (1) to double", 1);
+  print("Teste cast double (3.4) to int");
+  contador = 3.4;
+  print(contador);
+
+  return;
+}
